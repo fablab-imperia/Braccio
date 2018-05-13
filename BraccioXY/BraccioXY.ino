@@ -38,23 +38,46 @@
 // RemoteXY configurate  
 #pragma pack(push, 1)
 uint8_t RemoteXY_CONF[] =
-  { 255,6,0,0,0,51,0,8,13,0,
-  4,0,5,7,7,45,2,26,4,0,
-  16,7,7,45,2,26,4,0,28,7,
-  7,45,2,26,4,0,40,7,7,45,
-  2,26,4,0,52,7,7,45,2,26,
-  4,0,65,7,7,45,2,26 };
+  { 255,14,0,0,0,202,0,8,13,0,
+  1,0,82,5,5,5,2,31,80,49,
+  0,1,0,82,13,5,5,2,31,80,
+  50,0,1,0,82,21,5,5,2,31,
+  80,51,0,1,0,82,29,5,5,2,
+  31,80,52,0,1,0,82,37,5,5,
+  2,31,80,53,0,1,0,82,46,5,
+  5,2,31,80,54,0,1,0,81,54,
+  7,7,12,31,62,0,4,0,9,4,
+  8,43,2,26,4,0,22,4,8,43,
+  2,26,4,0,35,4,8,43,2,26,
+  4,0,48,4,8,43,2,26,4,0,
+  62,4,8,43,2,26,1,0,90,54,
+  7,7,36,31,88,0,129,0,33,57,
+  11,4,17,48,45,49,56,48,194,176,
+  0,4,128,9,51,63,7,2,26,129,
+  0,10,3,6,4,17,77,50,0,129,
+  0,23,3,6,4,17,77,51,0,129,
+  0,36,3,6,4,17,77,52,0,129,
+  0,49,3,6,4,17,77,53,0,129,
+  0,63,3,6,4,17,77,54,0 };
   
 // this structure defines all the variables of your control interface 
 struct {
 
     // input variable
-  int8_t M1; // =0..100 slider position 
+  uint8_t P1; // =1 if button pressed, else =0 
+  uint8_t P2; // =1 if button pressed, else =0 
+  uint8_t P3; // =1 if button pressed, else =0 
+  uint8_t P4; // =1 if button pressed, else =0 
+  uint8_t P5; // =1 if button pressed, else =0 
+  uint8_t P6; // =1 if button pressed, else =0 
+  uint8_t play; // =1 if button pressed, else =0 
   int8_t M2; // =0..100 slider position 
   int8_t M3; // =0..100 slider position 
   int8_t M4; // =0..100 slider position 
   int8_t M5; // =0..100 slider position 
   int8_t M6; // =0..100 slider position 
+  uint8_t cancel; // =1 if button pressed, else =0 
+  int8_t M1; // =0..100 slider position 
 
     // other variable
   uint8_t connect_flag;  // =1 if wire connected, else =0 
@@ -65,6 +88,15 @@ struct {
 /////////////////////////////////////////////
 //           END RemoteXY include          //
 /////////////////////////////////////////////
+
+#define PIN_P1 13
+#define PIN_P2 13
+#define PIN_P3 13
+#define PIN_P4 13
+#define PIN_P5 13
+#define PIN_P6 13
+#define PIN_PLAY 13
+#define PIN_CANCEL 13
 
 Servo base;
 Servo shoulder;
@@ -103,5 +135,3 @@ int Y6 = map(RemoteXY.M6, 0, 100, 10, 73);
 
 
 }
-
-
