@@ -15,6 +15,7 @@
 
 #define REALTIME_MODE 0
 #define PLAYBACK_MODE 1
+#define DEMO_MODE 2
 
 
 struct PosaBraccio 
@@ -32,6 +33,16 @@ struct PosaBraccio
     }
 
     PosaBraccio(int m1,int m2, int m3, int m4, int m5, int m6)
+    {
+          this->angoloServoBase = m1;
+          this->angoloServoShoulder = m2;
+          this->angoloServoElbow = m3;
+          this->angoloServoWristRot = m4;
+          this->angoloServoWristVer = m5;
+          this->angoloServoGripper = m6;   
+    }
+
+    void setPosa(int m1,int m2, int m3, int m4, int m5, int m6)
     {
           this->angoloServoBase = m1;
           this->angoloServoShoulder = m2;
@@ -76,9 +87,59 @@ PosaBraccio posaCorrente;
 
 PosaBraccio pose_salvate[6];
 
+PosaBraccio pose_demo[8];
+
 int current_mode = REALTIME_MODE;
 int current_playback_pose = POSA1;
+int current_playback_pose_demo = POSA3;
 bool  poseCrescenti = true;
+bool primo_giro_demo = true;
+
+void stampa_posa(PosaBraccio& posa) 
+{
+    Serial.println(F("POSA CORRENTE: ")); 
+    Serial.print(F("m1: "));
+    Serial.println(posa.angoloServoBase); 
+    Serial.print(F("m2: ")); 
+    Serial.println(posa.angoloServoShoulder); 
+    Serial.print(F("m3: ")); 
+    Serial.println(posa.angoloServoElbow);
+    Serial.print(F("m4: ")); 
+    Serial.println(posa.angoloServoWristRot);
+    Serial.print(F("m5: ")); 
+    Serial.println(posa.angoloServoWristVer);
+    Serial.print(F("m6: "));  
+    Serial.println(posa.angoloServoGripper);
+  
+}
+
+
+void run_demo() 
+{
+    
+    if( poseCrescenti) 
+    {
+        current_playback_pose_demo++;
+        if (current_playback_pose_demo > 7)  
+        {
+          poseCrescenti = false;
+          current_playback_pose_demo = 6;
+        }
+    } 
+    else 
+    {
+        current_playback_pose_demo--;
+        if (current_playback_pose_demo < 0 )  
+        {
+          poseCrescenti = true;
+          current_playback_pose_demo = 1;
+        }
+    }
+
+    applica_posa(40,  pose_demo[current_playback_pose_demo]); 
+    primo_giro_demo = false;
+    
+}
 
 void posa_seguente() 
 { 
@@ -184,6 +245,18 @@ void applica_posa(int speed, PosaBraccio& posa)
                                   posa.angoloServoGripper);  
 }
 
+void carica_pose_demo() 
+{
+    pose_demo[0].setPosa(0,76,23,41,90,10);
+    pose_demo[1].setPosa(0,76,23,41,90,52);
+    pose_demo[2].setPosa(0,105,23,31,90,52);
+    pose_demo[3].setPosa(108,128,23,13,90,52);
+    pose_demo[4].setPosa(180,128,23,13,90,52);
+    pose_demo[5].setPosa(180,82,23,49,90,52);
+    pose_demo[6].setPosa(180,76,23,40,90,52);
+    pose_demo[7].setPosa(180,76,23,41,90,10);  
+}
+
 void setup() 
 {
 
@@ -199,6 +272,8 @@ void setup()
      
     Braccio.begin();
     Braccio.ServoMovement(30,         90, 90, 90, 90, 90,  10); 
+
+    carica_pose_demo();
 }
 
 void loop() 
@@ -241,6 +316,18 @@ void loop()
          pose_salvate[4].reset();
          pose_salvate[5].reset();
          current_mode = REALTIME_MODE;
+      }
+      else if (str == "demo") 
+      {
+          poseCrescenti = true;
+          primo_giro_demo = true;
+          current_playback_pose_demo = POSA3;
+          current_mode = DEMO_MODE;
+      }
+      else if (str == "normal") 
+      {
+          poseCrescenti = true;
+          current_mode = REALTIME_MODE;
       }
 
       if (current_mode == REALTIME_MODE)
@@ -296,17 +383,23 @@ void loop()
                 }
     
             }
-            applica_posa(30,posaCorrente);
-          }     
-    } 
-  }
-  }
-
-   if (current_mode == PLAYBACK_MODE) 
-   {   
-      //playback
-        posa_seguente();
+          }
+        applica_posa(30,posaCorrente);
+       }     
+     }
    }
+       if (current_mode == PLAYBACK_MODE) 
+       {   
+          //playback
+            posa_seguente();
+       }
+    
+       if (current_mode == DEMO_MODE) 
+       {        
+            run_demo();
+       }
+    
+
  
   delay(10); 
 
