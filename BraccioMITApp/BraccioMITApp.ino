@@ -1,5 +1,9 @@
+#include <Nunchuk.h>
+#include <Wire.h>
+
 #include <Braccio.h>
 #include <Servo.h>
+
 
 #include <ArduinoJson.h>
 
@@ -16,6 +20,26 @@
 #define REALTIME_MODE 0
 #define PLAYBACK_MODE 1
 #define DEMO_MODE 2
+#define NUNCHUK_MODE 3
+
+#define NUNCHUK_SOGLIA_X_POS 90
+#define NUNCHUK_SOGLIA_X_NEG -80
+#define NUNCHUK_SOGLIA_Y_POS 90
+#define NUNCHUK_SOGLIA_Y_NEG -90
+
+#define NUNCHUK_ROLL_POS 1.0f
+#define NUNCHUK_ROLL_NEG -1.0f
+#define NUNCHUK_PITCH_POS 0.8f
+#define NUNCHUK_PITCH_NEG -0.6f
+
+#define NUNCHUK_X_SPEED 3
+#define NUNCHUK_Y_SPEED 5
+#define NUNCHUK_Y_SHOULDER_SPEED 1
+
+#define NUNCHUK_ROLL_SPEED 5
+#define NUNCHUK_PITCH_SPEED 5
+#define NUNCHUK_GRIPPER_SPEED 5
+
 
 
 struct PosaBraccio 
@@ -136,8 +160,10 @@ void run_demo()
         }
     }
 
+    
     applica_posa(40,  pose_demo[current_playback_pose_demo]); 
     primo_giro_demo = false;
+    
     
 }
 
@@ -248,13 +274,122 @@ void applica_posa(int speed, PosaBraccio& posa)
 void carica_pose_demo() 
 {
     pose_demo[0].setPosa(0,76,23,41,90,10);
-    pose_demo[1].setPosa(0,76,23,41,90,52);
-    pose_demo[2].setPosa(0,105,23,31,90,52);
-    pose_demo[3].setPosa(108,128,23,13,90,52);
-    pose_demo[4].setPosa(180,128,23,13,90,52);
-    pose_demo[5].setPosa(180,82,23,49,90,52);
-    pose_demo[6].setPosa(180,76,23,40,90,52);
+    pose_demo[1].setPosa(0,76,23,41,90,56);
+    pose_demo[2].setPosa(0,105,23,31,90,56);
+    pose_demo[3].setPosa(108,128,23,13,90,56);
+    pose_demo[4].setPosa(180,128,23,13,90,56);
+    pose_demo[5].setPosa(180,82,23,49,90,56);
+    pose_demo[6].setPosa(180,76,23,40,90,56);
     pose_demo[7].setPosa(180,76,23,41,90,10);  
+}
+
+void handle_nunchuk() 
+{
+      if (nunchuk_read()) 
+      {
+          int x = nunchuk_joystickX();
+          int y = nunchuk_joystickY();
+          float pitch = nunchuk_pitch();
+          float roll = nunchuk_roll();
+
+          boolean apriPinza = nunchuk_buttonZ();
+          boolean chiudiPinza = nunchuk_buttonC();
+          
+          Serial.print("PITCH = ");
+          Serial.println(pitch);
+          Serial.print("ROLL = ");
+          Serial.println(roll);
+
+          
+
+          if (x > NUNCHUK_SOGLIA_X_POS) 
+          {
+              if (posaCorrente.angoloServoBase < 180)
+              {
+                posaCorrente.angoloServoBase += NUNCHUK_X_SPEED;
+              }
+          }
+
+           if (x < NUNCHUK_SOGLIA_X_NEG) 
+          {
+              if (posaCorrente.angoloServoBase > 0)
+              {
+                posaCorrente.angoloServoBase -= NUNCHUK_X_SPEED;
+              }
+          }
+
+          if (y > NUNCHUK_SOGLIA_Y_POS) 
+          {
+              if (posaCorrente.angoloServoElbow < 180)
+              {
+                posaCorrente.angoloServoElbow += NUNCHUK_Y_SPEED;
+                posaCorrente.angoloServoShoulder += NUNCHUK_Y_SHOULDER_SPEED; 
+              
+              }
+          }
+
+          if (y < NUNCHUK_SOGLIA_Y_NEG) 
+          {
+              if (posaCorrente.angoloServoElbow > 0)
+              {
+                posaCorrente.angoloServoElbow -= NUNCHUK_Y_SPEED;
+                posaCorrente.angoloServoShoulder -= NUNCHUK_Y_SHOULDER_SPEED; 
+              }
+          }
+
+          if (roll > NUNCHUK_ROLL_POS) 
+          {
+              if (posaCorrente.angoloServoWristVer > 0)
+              {
+                posaCorrente.angoloServoWristVer -= NUNCHUK_ROLL_SPEED;
+              }
+          }
+
+           if (roll < NUNCHUK_ROLL_NEG) 
+          {
+              if (posaCorrente.angoloServoWristVer < 180)
+              {
+                posaCorrente.angoloServoWristVer += NUNCHUK_ROLL_SPEED;
+              }
+          }
+
+          if (pitch > NUNCHUK_PITCH_POS) 
+          {
+              if (posaCorrente.angoloServoWristRot > 0)
+              {
+              posaCorrente.angoloServoWristRot -= NUNCHUK_PITCH_SPEED; 
+              }
+          }
+
+          if (pitch < NUNCHUK_PITCH_NEG) 
+          {
+              if (posaCorrente.angoloServoWristRot < 180)
+              {
+                posaCorrente.angoloServoWristRot += NUNCHUK_PITCH_SPEED;
+              }
+          }
+
+         if (apriPinza)
+         {
+              if (posaCorrente.angoloServoGripper > 10)
+              {
+                posaCorrente.angoloServoGripper -= NUNCHUK_GRIPPER_SPEED;
+              }
+              
+         } 
+         else if (chiudiPinza) 
+         {
+              if (posaCorrente.angoloServoGripper < 73)
+              {
+                posaCorrente.angoloServoGripper += NUNCHUK_GRIPPER_SPEED;
+              }
+         } 
+         
+          
+
+          applica_posa(50, posaCorrente);
+          
+      }
 }
 
 void setup() 
@@ -269,10 +404,13 @@ void setup()
 
     Serial.begin(9600);
     Bluetooth.begin(9600);
-     
+    Wire.begin();
+    nunchuk_init();
+       
     Braccio.begin();
     Braccio.ServoMovement(30,         90, 90, 90, 90, 90,  10); 
 
+  
     carica_pose_demo();
 }
 
@@ -291,7 +429,19 @@ void loop()
     {
       buffer[numeroCaratteri] = '\0';
       String str(buffer);
-      Serial.println(str);  
+
+      if (current_mode == DEMO_MODE && (str == "normal" || str == "nunchuk")) 
+      {
+         applica_posa(30,pose_demo[3]);
+         delay(500);
+         applica_posa(30,pose_demo[2]);
+         delay(500);
+         applica_posa(30,pose_demo[1]);
+         delay(500);
+         applica_posa(30,pose_demo[0]);
+         applica_posa(30,pose_demo[2]);
+         
+      }
 
       if (str == "esegui") 
       {
@@ -321,13 +471,23 @@ void loop()
       {
           poseCrescenti = true;
           primo_giro_demo = true;
-          current_playback_pose_demo = POSA3;
+          current_playback_pose_demo = -1;
           current_mode = DEMO_MODE;
+
+          PosaBraccio posa_iniziale_demo(0,90,32,90,90,10);   
+          applica_posa(30,posa_iniziale_demo);
+          delay(500);
+
+          
       }
       else if (str == "normal") 
       {
           poseCrescenti = true;
           current_mode = REALTIME_MODE;
+      }
+      else if (str == "nunchuk") 
+      {
+          current_mode = NUNCHUK_MODE;
       }
 
       if (current_mode == REALTIME_MODE)
@@ -388,16 +548,22 @@ void loop()
        }     
      }
    }
-       if (current_mode == PLAYBACK_MODE) 
-       {   
-          //playback
-            posa_seguente();
-       }
-    
-       if (current_mode == DEMO_MODE) 
-       {        
-            run_demo();
-       }
+   
+   if (current_mode == PLAYBACK_MODE) 
+   {   
+      //playback
+        posa_seguente();
+   }
+
+   if (current_mode == DEMO_MODE) 
+   {        
+        run_demo();
+   }
+
+   if (current_mode == NUNCHUK_MODE) 
+   {        
+        handle_nunchuk();
+   }
     
 
  
